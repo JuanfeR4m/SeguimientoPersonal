@@ -11,15 +11,16 @@ export async function login(formData: FormData) {
   const email = formData.get('email') as string
   const password = formData.get('password') as string
 
-  const { error } = await supabase.auth.signInWithPassword({ email, password })
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password })
 
   if (error) {
-    // Devolvemos el error al cliente en vez de redireccionar
-    return { error: 'Usuario o contraseña incorrectos' }
+    // Es mejor devolver el error real (por ejemplo, si falta confirmar el correo)
+    return { error: error.message }
   }
 
+  const user = data.user;
+
   // Obtener el rol del usuario para redirigir correctamente
-  const { data: { user } } = await supabase.auth.getUser()
   if (user) {
     const { data: profile } = await supabase
       .from('profiles')

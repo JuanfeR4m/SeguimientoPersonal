@@ -18,6 +18,28 @@ export async function login(formData: FormData) {
     return { error: 'Usuario o contraseña incorrectos' }
   }
 
+  // Obtener el rol del usuario para redirigir correctamente
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    let redirectPath = '/'
+    if (profile?.role === 1) {
+      redirectPath = '/admin'
+    } else if (profile?.role === 2) {
+      redirectPath = '/supervisor'
+    } else if (profile?.role === 3) {
+      redirectPath = '/colaborador'
+    }
+
+    revalidatePath('/', 'layout')
+    redirect(redirectPath)
+  }
+
   revalidatePath('/', 'layout')
   redirect('/')
 }

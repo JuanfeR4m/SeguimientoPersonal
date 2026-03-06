@@ -31,3 +31,43 @@ export interface Filters {
   fechaDesde?: string
   fechaHasta?: string
 }
+
+export interface Profile {
+  id: string
+  nombre: string
+  apellido: string
+  correo_electronico: string
+  role: number
+}
+
+export interface Tarea {
+  id: string
+  titulo: string
+  descripcion?: string
+  fecha_limite?: string
+  estado: 'pendiente' | 'en_progreso' | 'completada'
+  supervisor_id: string
+  colaborador_id: string
+  created_at: string
+  updated_at: string
+}
+
+export interface ActividadRegistro {
+  id: string
+  fecha_de_diligenciamiento: string
+  administracion: number
+  proyectos: number
+  interventoria: number
+  otro: number
+  tareas_pendientes: string
+  lugar_de_trabajo: string
+  proyectos_de_desarrollo: string
+  actividades_realizadas: string
+  riesgos: string
+  nombre_en_mayusculas: string
+  apellido_en_mayusculas: string
+  correo_electronico: string
+  hora_entrada: string
+  hora_salida: string
+  user_id: string
+}

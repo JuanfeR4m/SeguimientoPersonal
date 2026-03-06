@@ -38,11 +38,54 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Si hay sesión y está en /login → redirigir a la página principal
+  // Si hay sesión y está en /login → redirigir según rol
   if (user && pathname === '/login') {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    let redirectPath = '/'
+    if (profile?.role === 1) {
+      redirectPath = '/admin'
+    } else if (profile?.role === 2) {
+      redirectPath = '/supervisor'
+    } else if (profile?.role === 3) {
+      redirectPath = '/colaborador'
+    }
+
     const url = request.nextUrl.clone()
-    url.pathname = '/'
+    url.pathname = redirectPath
     return NextResponse.redirect(url)
+  }
+
+  // Si hay sesión pero no está en ruta del rol → redirigir
+  if (user && !pathname.startsWith('/login')) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    let expectedPath = '/'
+    if (profile?.role === 1) {
+      expectedPath = '/admin'
+    } else if (profile?.role === 2) {
+      expectedPath = '/supervisor'
+    } else if (profile?.role === 3) {
+      expectedPath = '/colaborador'
+    }
+
+    // Solo redirigir si está en una ruta diferente y no es pública
+    const publicPaths = ['/login', '/auth/callback']
+    const isInPublicPath = publicPaths.some((p) => pathname.startsWith(p))
+    
+    if (!isInPublicPath && !pathname.startsWith(expectedPath) && expectedPath !== '/') {
+      const url = request.nextUrl.clone()
+      url.pathname = expectedPath
+      return NextResponse.redirect(url)
+    }
   }
 
   return supabaseResponse

@@ -1,12 +1,16 @@
-"use client"
+'use client'
 
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { StatsGrid } from "@/components/stats-grid"
 import { SearchFilters } from "@/components/search-filters"
 import { EmployeeTable } from "@/components/employee-table"
 import { useState } from "react"
 import useSWR from "swr"
-import type { Respuesta, DashboardStats, Filters } from "@/lib/types"
+import { createClient } from "@/lib/supabase/client"
+import type { Respuesta, DashboardStats, Filters, Profile } from "@/lib/types"
+import { Loader2 } from "lucide-react"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
@@ -21,6 +25,48 @@ function buildUrl(filters: Filters) {
 
 export default function DashboardPage() {
   const [filters, setFilters] = useState<Filters>({})
+  const [isChecking, setIsChecking] = useState(true)
+  const router = useRouter()
+
+  // Verificar el rol del usuario
+  useEffect(() => {
+    const checkRole = async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single()
+
+        // Si el usuario no es admin (role 1), redirigir
+        if (profile?.role === 2) {
+          router.push('/supervisor')
+        } else if (profile?.role === 3) {
+          router.push('/colaborador')
+        }
+      }
+
+      setIsChecking(false)
+    }
+
+    checkRole()
+  }, [router])
+
+  if (isChecking) {
+    return (
+      <DashboardLayout
+        title="Verificando acceso..."
+        description="Por favor espera"
+      >
+        <div className="flex items-center justify-center h-full">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      </DashboardLayout>
+    )
+  }
 
   const { data, isLoading, error } = useSWR<{
     stats: DashboardStats

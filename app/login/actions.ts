@@ -11,21 +11,31 @@ export async function login(formData: FormData) {
   const email = formData.get('email') as string
   const password = formData.get('password') as string
 
-  const { error } = await supabase.auth.signInWithPassword({ email, password })
+  console.log('[v0] Intentando login con email:', email)
+
+  const { data: authData, error } = await supabase.auth.signInWithPassword({ email, password })
+
+  console.log('[v0] Resultado auth:', { authData, error })
 
   if (error) {
+    console.log('[v0] Error de autenticacion:', error.message)
     // Devolvemos el error al cliente en vez de redireccionar
     return { error: 'Usuario o contraseña incorrectos' }
   }
 
   // Obtener el rol del usuario para redirigir correctamente
   const { data: { user } } = await supabase.auth.getUser()
+  console.log('[v0] Usuario obtenido:', user?.id, user?.email)
+  
   if (user) {
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('role')
+      .select('*')
       .eq('id', user.id)
       .single()
+
+    console.log('[v0] Perfil encontrado:', profile)
+    console.log('[v0] Error de perfil:', profileError)
 
     let redirectPath = '/'
     if (profile?.role === 1) {
@@ -36,6 +46,7 @@ export async function login(formData: FormData) {
       redirectPath = '/colaborador'
     }
 
+    console.log('[v0] Redirigiendo a:', redirectPath)
     revalidatePath('/', 'layout')
     redirect(redirectPath)
   }

@@ -28,6 +28,15 @@ export default function DashboardPage() {
   const [isChecking, setIsChecking] = useState(true)
   const router = useRouter()
 
+  // Mover useSWR ANTES del return condicional (Reglas de Hooks)
+  const { data, isLoading, error } = useSWR<{
+    stats: DashboardStats
+    registros: Respuesta[]
+    lugares: string[]
+  }>(buildUrl(filters), fetcher, {
+    revalidateOnFocus: false,
+  })
+
   // Verificar el rol del usuario
   useEffect(() => {
     const checkRole = async () => {
@@ -67,14 +76,6 @@ export default function DashboardPage() {
       </DashboardLayout>
     )
   }
-
-  const { data, isLoading, error } = useSWR<{
-    stats: DashboardStats
-    registros: Respuesta[]
-    lugares: string[]
-  }>(buildUrl(filters), fetcher, {
-    revalidateOnFocus: false,
-  })
 
   const stats = data?.stats
   const registros = data?.registros || []

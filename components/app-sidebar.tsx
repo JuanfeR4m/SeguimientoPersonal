@@ -1,8 +1,10 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
+import { useTransition } from "react"
 import { LayoutDashboard, ClipboardCheck, BarChart3, LogOut, Shield } from "lucide-react"
+import { logout } from "@/app/login/actions"
 import {
   Sidebar,
   SidebarContent,
@@ -25,6 +27,15 @@ const navItems = [
 
 export function AppSidebar() {
   const pathname = usePathname()
+  const router = useRouter()
+  const [isPending, startTransition] = useTransition()
+
+  const handleLogout = async () => {
+    startTransition(async () => {
+      await logout()
+      router.push('/login')
+    })
+  }
 
   return (
     <Sidebar>
@@ -87,11 +98,13 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
+              onClick={handleLogout}
+              disabled={isPending}
               size="default"
-              className="text-sidebar-foreground/70 hover:bg-destructive/20 hover:text-destructive"
+              className="text-sidebar-foreground/70 hover:bg-destructive/20 hover:text-destructive cursor-pointer"
             >
               <LogOut className="h-4 w-4" />
-              <span>Cerrar Sesion</span>
+              <span>{isPending ? 'Cerrando...' : 'Cerrar Sesion'}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

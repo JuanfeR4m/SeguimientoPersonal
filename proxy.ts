@@ -31,8 +31,11 @@ export async function middleware(request: NextRequest) {
   // Si no hay sesión y la ruta NO es pública → redirigir al login
   const publicPaths = ['/login', '/auth/callback']
   const isPublic = publicPaths.some((p) => pathname.startsWith(p))
+  
+  // Siempre proteger la ruta raíz (es el dashboard protegido)
+  const isRoot = pathname === '/'
 
-  if (!user && !isPublic) {
+  if (!user && (!isPublic || isRoot)) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)

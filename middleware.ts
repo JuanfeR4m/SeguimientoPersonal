@@ -48,7 +48,7 @@ export async function middleware(request: NextRequest) {
 
     let redirectPath = '/'
     if (profile?.role === 1) {
-      redirectPath = '/admin'
+      redirectPath = '/' // Admin va a la raíz
     } else if (profile?.role === 2) {
       redirectPath = '/supervisor'
     } else if (profile?.role === 3) {
@@ -70,7 +70,7 @@ export async function middleware(request: NextRequest) {
 
     let expectedPath = '/'
     if (profile?.role === 1) {
-      expectedPath = '/admin'
+      expectedPath = '/'
     } else if (profile?.role === 2) {
       expectedPath = '/supervisor'
     } else if (profile?.role === 3) {
@@ -81,7 +81,15 @@ export async function middleware(request: NextRequest) {
     const publicPaths = ['/login', '/auth/callback']
     const isInPublicPath = publicPaths.some((p) => pathname.startsWith(p))
     
-    if (!isInPublicPath && !pathname.startsWith(expectedPath) && expectedPath !== '/') {
+    // Si rol es 1 y la ruta es otra que no sea raíz (o API), redirigir
+    if (!isInPublicPath && profile?.role === 1 && pathname !== '/' && !pathname.startsWith('/api')) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/'
+      return NextResponse.redirect(url)
+    }
+
+    // Para supervisores y colaboradores, asegurarse que no salgan de sus rutas
+    if (!isInPublicPath && profile?.role !== 1 && !pathname.startsWith(expectedPath) && expectedPath !== '/') {
       const url = request.nextUrl.clone()
       url.pathname = expectedPath
       return NextResponse.redirect(url)

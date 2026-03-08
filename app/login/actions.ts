@@ -8,7 +8,7 @@ import { createClient } from '@/lib/supabase/server'
 export async function login(formData: FormData) {
   const supabase = await createClient()
 
-  const email = formData.get('email') as string
+  const email = (formData.get('email') as string)?.trim()
   const password = formData.get('password') as string
 
   const { error } = await supabase.auth.signInWithPassword({ email, password })
@@ -29,7 +29,7 @@ export async function login(formData: FormData) {
 
     let redirectPath = '/'
     if (profile?.role === 1) {
-      redirectPath = '/admin'
+      redirectPath = '/' // Admin usa la ruta raíz
     } else if (profile?.role === 2) {
       redirectPath = '/supervisor'
     } else if (profile?.role === 3) {

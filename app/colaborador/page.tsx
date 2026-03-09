@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar'
 import { ColaboradorSidebar } from '@/components/colaborador-sidebar'
 import { Separator } from '@/components/ui/separator'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { AlertCircle, CheckCircle2, Clock, Loader2 } from 'lucide-react'
 import useSWR from 'swr'
 import { getColaboradorProfile, getColaboradorTareas, registrarActividad, crearTareaPropios, actualizarEstadoTarea } from './actions'
@@ -20,7 +20,10 @@ const fetcher = async () => {
   return { profile: profileRes.profile, tareas: tareasRes.tareas }
 }
 
-export default function ColaboradorPage() {
+function ColaboradorContent() {
+  const searchParams = useSearchParams()
+  const tab = searchParams.get('tab') || 'actividades'
+
   const { data, isLoading, mutate } = useSWR('colaborador-data', fetcher, {
     revalidateOnFocus: false,
   })
@@ -37,6 +40,7 @@ export default function ColaboradorPage() {
   const handleRegistrarActividad = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
+    const form = e.currentTarget
 
     startActivityTransition(async () => {
       const result = await registrarActividad(formData)
@@ -44,7 +48,7 @@ export default function ColaboradorPage() {
         setActivityMessage({ type: 'error', text: result.error })
       } else {
         setActivityMessage({ type: 'success', text: result.success || 'Actividad registrada' })
-        e.currentTarget.reset()
+        form.reset()
         mutate()
         setTimeout(() => setActivityMessage(null), 3000)
       }
@@ -54,6 +58,7 @@ export default function ColaboradorPage() {
   const handleCrearTarea = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
+    const form = e.currentTarget
 
     startTaskTransition(async () => {
       const result = await crearTareaPropios(formData)
@@ -61,7 +66,7 @@ export default function ColaboradorPage() {
         setTaskMessage({ type: 'error', text: result.error })
       } else {
         setTaskMessage({ type: 'success', text: result.success || 'Tarea creada' })
-        e.currentTarget.reset()
+        form.reset()
         setShowTareaForm(false)
         mutate()
         setTimeout(() => setTaskMessage(null), 3000)
@@ -79,7 +84,7 @@ export default function ColaboradorPage() {
   if (isLoading) {
     return (
       <SidebarProvider>
-        <ColaboradorSidebar nombre="Cargando..." apellido="" />
+        <ColaboradorSidebar nombre="Cargando..." apellido="" activeTab={tab} />
         <SidebarInset>
           <div className="flex h-screen items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin" />
@@ -92,7 +97,7 @@ export default function ColaboradorPage() {
   if (!profile) {
     return (
       <SidebarProvider>
-        <ColaboradorSidebar nombre="Error" apellido="" />
+        <ColaboradorSidebar nombre="Error" apellido="" activeTab={tab} />
         <SidebarInset>
           <div className="flex h-screen items-center justify-center">
             <div className="text-center">
@@ -107,28 +112,26 @@ export default function ColaboradorPage() {
 
   return (
     <SidebarProvider>
-      <ColaboradorSidebar nombre={profile.nombre} apellido={profile.apellido} />
+      <ColaboradorSidebar nombre={profile.nombre} apellido={profile.apellido} activeTab={tab} />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-3 border-b border-border bg-card px-6">
           <SidebarTrigger className="-ml-1 text-muted-foreground" />
           <Separator orientation="vertical" className="mr-1 h-5" />
           <div>
-            <h1 className="text-sm font-semibold text-foreground">Mi Espacio</h1>
-            <p className="text-xs text-muted-foreground">Registra tus actividades diarias</p>
+            <h1 className="text-sm font-semibold text-foreground">
+              {tab === 'actividades' ? 'Registro de Actividades' : 'Mis Tareas'}
+            </h1>
+            <p className="text-xs text-muted-foreground">
+              {tab === 'actividades' ? 'Registra tus labores diarias' : 'Gestiona tus tareas asignadas'}
+            </p>
           </div>
         </header>
 
         <div className="flex-1 overflow-auto p-6">
           <div className="space-y-6 max-w-4xl">
-            {/* Tabs para navegación */}
-            <Tabs defaultValue="actividades" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="actividades">Registrar Actividad</TabsTrigger>
-                <TabsTrigger value="tareas">Mis Tareas</TabsTrigger>
-              </TabsList>
-
-              {/* Tab: Registrar Actividad */}
-              <TabsContent value="actividades" className="space-y-4">
+            {/* Tab: Registrar Actividad */}
+            {tab === 'actividades' && (
+              <div className="space-y-4">
                 {activityMessage && (
                   <div
                     className={`rounded-lg p-4 flex items-center gap-3 ${
@@ -350,10 +353,12 @@ export default function ColaboradorPage() {
                     </form>
                   </CardContent>
                 </Card>
-              </TabsContent>
+              </div>
+            )}
 
-              {/* Tab: Mis Tareas */}
-              <TabsContent value="tareas" className="space-y-4">
+            {/* Tab: Mis Tareas */}
+            {tab === 'tareas' && (
+              <div className="space-y-4">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-lg font-semibold text-foreground">Mis Tareas</h2>
                   <Button
@@ -511,11 +516,23 @@ export default function ColaboradorPage() {
                     </Card>
                   )}
                 </div>
-              </TabsContent>
-            </Tabs>
+              </div>
+            )}
           </div>
         </div>
       </SidebarInset>
     </SidebarProvider>
+  )
+}
+
+export default function ColaboradorPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    }>
+      <ColaboradorContent />
+    </Suspense>
   )
 }

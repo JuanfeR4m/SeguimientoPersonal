@@ -54,8 +54,18 @@ export async function registrarActividad(formData: FormData) {
     return { error: 'No autenticado' }
   }
 
-  const actividad: ActividadRegistro = {
-    id: crypto.randomUUID(),
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('nombre, apellido, correo_electronico')
+    .eq('id', user.id)
+    .single()
+
+  if (profileError || !profile) {
+    console.error('Error al obtener perfil para registro:', profileError)
+    return { error: 'No se pudo obtener la información del perfil' }
+  }
+
+  const actividad = {
     fecha_de_diligenciamiento: formData.get('fecha_de_diligenciamiento') as string,
     administracion: parseInt(formData.get('administracion') as string) || 0,
     proyectos: parseInt(formData.get('proyectos') as string) || 0,
@@ -66,20 +76,19 @@ export async function registrarActividad(formData: FormData) {
     proyectos_de_desarrollo: formData.get('proyectos_de_desarrollo') as string,
     actividades_realizadas: formData.get('actividades_realizadas') as string,
     riesgos: formData.get('riesgos') as string,
-    nombre_en_mayusculas: formData.get('nombre_en_mayusculas') as string,
-    apellido_en_mayusculas: formData.get('apellido_en_mayusculas') as string,
-    correo_electronico: formData.get('correo_electronico') as string,
+    nombre_en_mayusculas: profile.nombre.toUpperCase(),
+    apellido_en_mayusculas: profile.apellido.toUpperCase(),
+    correo_electronico: profile.correo_electronico,
     hora_entrada: formData.get('hora_entrada') as string,
     hora_salida: formData.get('hora_salida') as string,
-    user_id: user.id,
   }
 
-  const { error } = await supabase
-    .from('seguimiento')
+  const { error: insertError } = await supabase
+    .from('respuestas')
     .insert([actividad])
 
-  if (error) {
-    console.error('Error al registrar actividad:', error)
+  if (insertError) {
+    console.error('Error al registrar actividad:', insertError)
     return { error: 'No se pudo registrar la actividad' }
   }
 

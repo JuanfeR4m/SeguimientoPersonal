@@ -91,8 +91,8 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(url)
     }
 
-    // Para supervisores y colaboradores, asegurarse que no salgan de sus rutas
-    if (!isInPublicPath && profile?.role !== 1 && !pathname.startsWith(expectedPath) && expectedPath !== '/') {
+    // Para supervisores y colaboradores, asegurarse que no salgan de sus rutas (ni de la API)
+    if (!isInPublicPath && profile?.role !== 1 && !pathname.startsWith(expectedPath) && expectedPath !== '/' && !pathname.startsWith('/api')) {
       const url = request.nextUrl.clone()
       url.pathname = expectedPath
       return NextResponse.redirect(url)

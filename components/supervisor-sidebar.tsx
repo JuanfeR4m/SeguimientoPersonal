@@ -2,7 +2,7 @@
 
 import { useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { LogOut, Home, CheckSquare } from 'lucide-react'
+import { LogOut, Home, CheckSquare, ClipboardList } from 'lucide-react'
 import { logout } from '@/app/login/actions'
 import {
   Sidebar,
@@ -21,9 +21,10 @@ import {
 interface SupervisorSidebarProps {
   nombre: string
   apellido: string
+  activeTab?: string
 }
 
-export function SupervisorSidebar({ nombre, apellido }: SupervisorSidebarProps) {
+export function SupervisorSidebar({ nombre, apellido, activeTab = 'inicio' }: SupervisorSidebarProps) {
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
 
@@ -34,8 +35,12 @@ export function SupervisorSidebar({ nombre, apellido }: SupervisorSidebarProps) 
     })
   }
 
-  const navItems = [
-    { title: 'Panel Supervisor', href: '/supervisor', icon: Home },
+  const mainNavItems = [
+    { id: 'inicio', title: 'Inicio', href: '/supervisor?tab=inicio', icon: Home },
+  ]
+
+  const gestionItems = [
+    { id: 'asignar', title: 'Asignar Tareas', href: '/supervisor?tab=asignar', icon: ClipboardList },
   ]
 
   return (
@@ -57,19 +62,58 @@ export function SupervisorSidebar({ nombre, apellido }: SupervisorSidebarProps) 
       <SidebarSeparator />
 
       <SidebarContent>
+        {/* Grupo principal: Navegación */}
         <SidebarGroup>
           <SidebarGroupLabel className="text-sidebar-foreground/50 text-[11px] uppercase tracking-widest">
             Navegación
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
+              {mainNavItems.map((item) => (
+                <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton
                     asChild
                     tooltip={item.title}
                     size="lg"
-                    className="bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary hover:text-sidebar-primary-foreground"
+                    isActive={activeTab === item.id}
+                    className={
+                      activeTab === item.id
+                        ? "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary hover:text-sidebar-primary-foreground"
+                        : ""
+                    }
+                  >
+                    <a href={item.href}>
+                      <item.icon className="h-5 w-5" />
+                      <span className="font-medium">{item.title}</span>
+                    </a>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarSeparator />
+
+        {/* Grupo secundario: Gestión de Tareas */}
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-sidebar-foreground/50 text-[11px] uppercase tracking-widest">
+            Gestión
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {gestionItems.map((item) => (
+                <SidebarMenuItem key={item.id}>
+                  <SidebarMenuButton
+                    asChild
+                    tooltip={item.title}
+                    size="lg"
+                    isActive={activeTab === item.id}
+                    className={
+                      activeTab === item.id
+                        ? "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary hover:text-sidebar-primary-foreground"
+                        : ""
+                    }
                   >
                     <a href={item.href}>
                       <item.icon className="h-5 w-5" />

@@ -21,9 +21,10 @@ import {
 interface ColaboradorSidebarProps {
   nombre: string
   apellido: string
+  activeTab?: string
 }
 
-export function ColaboradorSidebar({ nombre, apellido }: ColaboradorSidebarProps) {
+export function ColaboradorSidebar({ nombre, apellido, activeTab = 'actividades' }: ColaboradorSidebarProps) {
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
 
@@ -34,8 +35,12 @@ export function ColaboradorSidebar({ nombre, apellido }: ColaboradorSidebarProps
     })
   }
 
-  const navItems = [
-    { title: 'Mi Espacio', href: '/colaborador', icon: Home },
+  const mainNavItems = [
+    { id: 'actividades', title: 'Actividades', href: '/colaborador?tab=actividades', icon: Home },
+  ]
+
+  const gestionItems = [
+    { id: 'tareas', title: 'Mis Tareas', href: '/colaborador?tab=tareas', icon: ClipboardList },
   ]
 
   return (
@@ -63,13 +68,50 @@ export function ColaboradorSidebar({ nombre, apellido }: ColaboradorSidebarProps
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
+              {mainNavItems.map((item) => (
+                <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton
                     asChild
                     tooltip={item.title}
                     size="lg"
-                    className="bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary hover:text-sidebar-primary-foreground"
+                    isActive={activeTab === item.id}
+                    className={
+                      activeTab === item.id
+                        ? "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary hover:text-sidebar-primary-foreground"
+                        : ""
+                    }
+                  >
+                    <a href={item.href}>
+                      <item.icon className="h-5 w-5" />
+                      <span className="font-medium">{item.title}</span>
+                    </a>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarSeparator />
+
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-sidebar-foreground/50 text-[11px] uppercase tracking-widest">
+            Tareas
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {gestionItems.map((item) => (
+                <SidebarMenuItem key={item.id}>
+                  <SidebarMenuButton
+                    asChild
+                    tooltip={item.title}
+                    size="lg"
+                    isActive={activeTab === item.id}
+                    className={
+                      activeTab === item.id
+                        ? "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary hover:text-sidebar-primary-foreground"
+                        : ""
+                    }
                   >
                     <a href={item.href}>
                       <item.icon className="h-5 w-5" />

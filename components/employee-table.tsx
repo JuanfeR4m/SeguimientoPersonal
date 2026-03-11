@@ -108,15 +108,15 @@ function DetalleDialog({ registro }: { registro: Respuesta }) {
             </div>
             <div>
               <p className="text-xs font-medium text-muted-foreground">Fecha</p>
-              <p className="text-sm text-foreground font-mono">{formatDate(registro.fecha_de_diligenciamiento)}</p>
+              <p className="text-sm text-foreground">{formatDate(registro.fecha_de_diligenciamiento)}</p>
             </div>
             <div>
               <p className="text-xs font-medium text-muted-foreground">Hora Entrada</p>
-              <p className="text-sm text-foreground font-mono">{registro.hora_entrada || "---"}</p>
+              <p className="text-sm text-foreground">{registro.hora_entrada || "---"}</p>
             </div>
             <div>
               <p className="text-xs font-medium text-muted-foreground">Hora Salida</p>
-              <p className="text-sm text-foreground font-mono">{registro.hora_salida || "---"}</p>
+              <p className="text-sm text-foreground">{registro.hora_salida || "---"}</p>
             </div>
             <div>
               <p className="text-xs font-medium text-muted-foreground">Lugar de Trabajo</p>
@@ -207,12 +207,12 @@ export function EmployeeTable({ registros, isLoading, error }: EmployeeTableProp
               <TableBody>
                 {registros.map((r) => (
                   <TableRow key={r.id} className="cursor-pointer transition-colors hover:bg-secondary/60">
-                    <TableCell className="font-mono text-sm text-muted-foreground">{r.id}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{r.id}</TableCell>
                     <TableCell className="font-medium text-foreground">
                       {formatName(r.nombre_en_mayusculas, r.apellido_en_mayusculas)}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">{r.correo_electronico || "---"}</TableCell>
-                    <TableCell className="font-mono text-sm text-muted-foreground">{formatDate(r.fecha_de_diligenciamiento)}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{formatDate(r.fecha_de_diligenciamiento)}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {r.hora_entrada || "---"} - {r.hora_salida || "---"}
                     </TableCell>

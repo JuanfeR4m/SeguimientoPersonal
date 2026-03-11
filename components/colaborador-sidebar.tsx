@@ -41,6 +41,7 @@ export function ColaboradorSidebar({ nombre, apellido, activeTab = 'actividades'
 
   const gestionItems = [
     { id: 'tareas', title: 'Mis Tareas', href: '/colaborador?tab=tareas', icon: ClipboardList },
+    { id: 'equipo', title: 'Tareas del Equipo', href: '/colaborador?tab=equipo', icon: ClipboardList },
   ]
 
   return (
@@ -51,8 +52,8 @@ export function ColaboradorSidebar({ nombre, apellido, activeTab = 'actividades'
             <ClipboardList className="h-5 w-5 text-sidebar-primary-foreground" />
           </div>
           <div>
-            <h2 className="font-mono text-base font-bold tracking-tight text-sidebar-foreground">
-              Sistema MAV
+            <h2 className="text-base font-black tracking-tight text-sidebar-foreground">
+              Central MAV
             </h2>
             <p className="text-xs text-sidebar-foreground/60">Colaborador</p>
           </div>

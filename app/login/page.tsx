@@ -49,18 +49,12 @@ export default function LoginPage() {
 
   return (
     <>
-      {/* Fuentes igual que el diseño original */}
-      <link
-        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Space+Mono:wght@400;700&display=swap"
-        rel="stylesheet"
-      />
 
       {/* ── Fondo animado ── */}
       <div
         className="min-h-screen flex items-center justify-center relative overflow-hidden"
         style={{
           background: 'linear-gradient(135deg, #0a257c 0%, #1e3a8a 50%, #0a257c 100%)',
-          fontFamily: "'Poppins', sans-serif",
         }}
       >
         {/* Orbes de fondo */}
@@ -101,10 +95,17 @@ export default function LoginPage() {
               priority
             />
             <h1
-              className="text-[28px] font-bold mb-2"
-              style={{ color: '#0a257c', fontFamily: "'Space Mono', monospace", letterSpacing: '-1px' }}
+              className="text-4xl md:text-5xl font-black mb-3 tracking-tighter leading-none"
+              style={{
+                color: '#0a257c',
+                fontFamily: 'var(--font-heading)',
+                background: 'linear-gradient(to bottom, #0a257c, #1e3b8e)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                paddingBottom: '4px'
+              }}
             >
-              Sistema MAV
+              CENTRAL MAV
             </h1>
             <p className="text-[14px]" style={{ color: '#64748b' }}>
               Seguimiento de Personal
@@ -161,7 +162,6 @@ export default function LoginPage() {
                 style={{
                   border: '2px solid #e2e8f0',
                   background: '#f8fafc',
-                  fontFamily: "'Poppins', sans-serif",
                 }}
                 onFocus={(e) => {
                   e.target.style.borderColor = '#fd8839'
@@ -197,7 +197,6 @@ export default function LoginPage() {
                   style={{
                     border: '2px solid #e2e8f0',
                     background: '#f8fafc',
-                    fontFamily: "'Poppins', sans-serif",
                   }}
                   onFocus={(e) => {
                     e.target.style.borderColor = '#fd8839'
@@ -255,20 +254,19 @@ export default function LoginPage() {
               style={{
                 background: 'linear-gradient(135deg, #fd8839 0%, #ea580c 100%)',
                 boxShadow: '0 8px 24px rgba(253,136,57,0.3)',
-                fontFamily: "'Space Mono', monospace",
-                letterSpacing: '0.5px',
+                letterSpacing: '1px',
                 border: 'none',
                 cursor: isPending ? 'not-allowed' : 'pointer',
               }}
               onMouseEnter={(e) => {
                 if (!isPending) {
-                  ;(e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-2px)'
-                  ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '0 12px 32px rgba(253,136,57,0.4)'
+                  ; (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-2px)'
+                    ; (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 12px 32px rgba(253,136,57,0.4)'
                 }
               }}
               onMouseLeave={(e) => {
-                ;(e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)'
-                ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '0 8px 24px rgba(253,136,57,0.3)'
+                ; (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)'
+                  ; (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 8px 24px rgba(253,136,57,0.3)'
               }}
             >
               {isPending ? <Loader2 size={20} className="animate-spin" /> : null}
@@ -294,8 +292,8 @@ export default function LoginPage() {
               style={{ maxWidth: 450, boxShadow: '0 30px 90px rgba(0,0,0,0.5)', animation: 'slideIn 0.4s ease-out' }}
             >
               <h2
-                className="text-[24px] font-bold mb-3"
-                style={{ color: '#0a257c', fontFamily: "'Space Mono', monospace" }}
+                className="text-2xl font-bold mb-3 tracking-tight"
+                style={{ color: '#0a257c', fontFamily: 'var(--font-heading)' }}
               >
                 Recuperar Contraseña
               </h2>
@@ -332,7 +330,7 @@ export default function LoginPage() {
                     placeholder="tu@correo.com"
                     required
                     className="w-full px-[18px] py-[14px] rounded-xl text-[15px] outline-none transition-all duration-300"
-                    style={{ border: '2px solid #e2e8f0', background: '#f8fafc', fontFamily: "'Poppins', sans-serif" }}
+                    style={{ border: '2px solid #e2e8f0', background: '#f8fafc' }}
                     onFocus={(e) => {
                       e.target.style.borderColor = '#fd8839'
                       e.target.style.background = 'white'
@@ -351,7 +349,7 @@ export default function LoginPage() {
                     type="button"
                     onClick={() => { setShowRecovery(false); setRecoveryMsg(null) }}
                     className="flex-1 py-[14px] rounded-xl text-[15px] font-semibold transition-all duration-300"
-                    style={{ background: '#f1f5f9', color: '#475569', border: 'none', cursor: 'pointer', fontFamily: "'Poppins', sans-serif" }}
+                    style={{ background: '#f1f5f9', color: '#475569', border: 'none', cursor: 'pointer' }}
                     onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#e2e8f0' }}
                     onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#f1f5f9' }}
                   >
@@ -366,7 +364,6 @@ export default function LoginPage() {
                       boxShadow: '0 4px 12px rgba(253,136,57,0.3)',
                       border: 'none',
                       cursor: isRecoveryPending ? 'not-allowed' : 'pointer',
-                      fontFamily: "'Poppins', sans-serif",
                     }}
                   >
                     {isRecoveryPending ? <Loader2 size={16} className="animate-spin" /> : null}

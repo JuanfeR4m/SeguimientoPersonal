@@ -1,5 +1,5 @@
 export const metadata = {
-  title: 'Panel Supervisor - Sistema MAV',
+  title: 'Panel Supervisor - Central MAV',
   description: 'Asigna y gestiona tareas de colaboradores',
 }
 

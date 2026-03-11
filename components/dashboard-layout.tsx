@@ -13,7 +13,7 @@ export function DashboardLayout({ children, title, description }: { children: Re
           <SidebarTrigger className="-ml-1 text-muted-foreground" />
           <Separator orientation="vertical" className="mr-1 h-5" />
           <div>
-            <h1 className="text-sm font-semibold text-foreground">{title}</h1>
+            <h1 className="text-sm font-black text-foreground">{title}</h1>
             <p className="text-xs text-muted-foreground">{description}</p>
           </div>
         </header>

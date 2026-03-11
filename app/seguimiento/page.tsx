@@ -19,7 +19,7 @@ export default function SeguimientoPage() {
     <DashboardLayout title="Seguimiento Semanal" description="Monitoreo de cumplimiento y alertas del personal">
       <div className="flex flex-col gap-6 p-6">
         <div>
-          <h2 className="text-lg font-bold text-foreground font-mono">Resumen de Alertas</h2>
+          <h2 className="text-lg font-bold text-foreground">Resumen de Alertas</h2>
           <p className="text-sm text-muted-foreground">
             Revisa los indicadores clave basados en los datos registrados
             {data?.totalRegistros !== undefined && (

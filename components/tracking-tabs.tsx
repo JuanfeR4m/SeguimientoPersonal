@@ -98,7 +98,7 @@ export function TrackingTabs({ detalle, isLoading }: TrackingTabsProps) {
                       <TableRow key={r.id} className="transition-colors hover:bg-secondary/60">
                         <TableCell className="font-medium text-foreground">{formatName(r.nombre_en_mayusculas, r.apellido_en_mayusculas)}</TableCell>
                         <TableCell className="text-sm text-muted-foreground">{r.correo_electronico || "---"}</TableCell>
-                        <TableCell className="font-mono text-sm text-muted-foreground">{formatDate(r.fecha_de_diligenciamiento)}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{formatDate(r.fecha_de_diligenciamiento)}</TableCell>
                         <TableCell className="text-sm text-muted-foreground">{r.lugar_de_trabajo || "---"}</TableCell>
                       </TableRow>
                     ))}
@@ -128,7 +128,7 @@ export function TrackingTabs({ detalle, isLoading }: TrackingTabsProps) {
                     {detalle.tareasPendientes.map((r) => (
                       <TableRow key={r.id} className="transition-colors hover:bg-secondary/60">
                         <TableCell className="font-medium text-foreground">{formatName(r.nombre_en_mayusculas, r.apellido_en_mayusculas)}</TableCell>
-                        <TableCell className="font-mono text-sm text-muted-foreground">{formatDate(r.fecha_de_diligenciamiento)}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{formatDate(r.fecha_de_diligenciamiento)}</TableCell>
                         <TableCell className="text-sm text-muted-foreground">{r.lugar_de_trabajo || "---"}</TableCell>
                         <TableCell className="text-sm text-muted-foreground max-w-xs">
                           <Badge variant="outline" className="bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-100 max-w-full">
@@ -164,8 +164,8 @@ export function TrackingTabs({ detalle, isLoading }: TrackingTabsProps) {
                     {detalle.sinHoraSalida.map((r) => (
                       <TableRow key={r.id} className="transition-colors hover:bg-secondary/60">
                         <TableCell className="font-medium text-foreground">{formatName(r.nombre_en_mayusculas, r.apellido_en_mayusculas)}</TableCell>
-                        <TableCell className="font-mono text-sm text-muted-foreground">{formatDate(r.fecha_de_diligenciamiento)}</TableCell>
-                        <TableCell className="font-mono text-sm text-muted-foreground">{r.hora_entrada || "---"}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{formatDate(r.fecha_de_diligenciamiento)}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{r.hora_entrada || "---"}</TableCell>
                         <TableCell>
                           <Badge variant="outline" className="bg-red-100 text-red-700 border-red-200 hover:bg-red-100">
                             Sin registrar
@@ -200,7 +200,7 @@ export function TrackingTabs({ detalle, isLoading }: TrackingTabsProps) {
                     {detalle.conRiesgos.map((r) => (
                       <TableRow key={r.id} className="transition-colors hover:bg-secondary/60">
                         <TableCell className="font-medium text-foreground">{formatName(r.nombre_en_mayusculas, r.apellido_en_mayusculas)}</TableCell>
-                        <TableCell className="font-mono text-sm text-muted-foreground">{formatDate(r.fecha_de_diligenciamiento)}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{formatDate(r.fecha_de_diligenciamiento)}</TableCell>
                         <TableCell className="text-sm text-muted-foreground">{r.lugar_de_trabajo || "---"}</TableCell>
                         <TableCell className="text-sm text-muted-foreground max-w-xs">
                           <Badge variant="outline" className="bg-orange-100 text-orange-700 border-orange-200 hover:bg-orange-100 max-w-full">

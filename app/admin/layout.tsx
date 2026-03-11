@@ -1,5 +1,5 @@
 export const metadata = {
-  title: 'Panel Administrativo - Sistema MAV',
+  title: 'Panel Administrativo - Central MAV',
   description: 'Administración del sistema de seguimiento',
 }
 

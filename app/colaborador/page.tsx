@@ -1,23 +1,30 @@
 'use client'
 
-import { useState, useTransition, Suspense } from 'react'
+import { useState, useTransition, Suspense, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar'
 import { ColaboradorSidebar } from '@/components/colaborador-sidebar'
 import { Separator } from '@/components/ui/separator'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { AlertCircle, CheckCircle2, Clock, Loader2 } from 'lucide-react'
+import { AlertCircle, CheckCircle2, Clock, Loader2, ChevronDown, ChevronUp } from 'lucide-react'
 import useSWR from 'swr'
-import { getColaboradorProfile, getColaboradorTareas, registrarActividad, crearTareaPropios, actualizarEstadoTarea } from './actions'
+import { getColaboradorProfile, getColaboradorTareas, registrarActividad, crearTareaPropios, actualizarEstadoTarea, getTodasLasTareasColaboradores, getColaboradoresDisponibles } from './actions'
 import type { Profile, Tarea } from '@/lib/types'
 
 const fetcher = async () => {
-  const [profileRes, tareasRes] = await Promise.all([
+  const [profileRes, tareasRes, equipoRes, colabsRes] = await Promise.all([
     getColaboradorProfile(),
     getColaboradorTareas(),
+    getTodasLasTareasColaboradores(),
+    getColaboradoresDisponibles(),
   ])
-  return { profile: profileRes.profile, tareas: tareasRes.tareas }
+  return { 
+    profile: profileRes.profile, 
+    tareas: tareasRes.tareas,
+    tareasEquipo: equipoRes.tareas,
+    colaboradores: colabsRes.colaboradores
+  }
 }
 
 function ColaboradorContent() {
@@ -34,8 +41,89 @@ function ColaboradorContent() {
   const [activityMessage, setActivityMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [taskMessage, setTaskMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
+  const [teamFilters, setTeamFilters] = useState({
+    searchText: '',
+    colaboradorIds: [] as string[],
+    fecha: '',
+    estado: 'all'
+  })
+
+  const [colaboradorSearch, setColaboradorSearch] = useState('')
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false)
+
+  const [personalFilters, setPersonalFilters] = useState({
+    searchText: '',
+    fechaLimite: '',
+    estado: 'all'
+  })
+
+  // Estado para la suma de porcentajes de esfuerzo
+  const [effort, setEffort] = useState({
+    administracion: 0,
+    proyectos: 0,
+    interventoria: 0,
+    otro: 0
+  })
+
+  const totalEffort = effort.administracion + effort.proyectos + effort.interventoria + effort.otro
+
   const profile = data?.profile as Profile | undefined
+  const colaboradores = data?.colaboradores || [] as Profile[]
   const tareas = data?.tareas as Tarea[] | undefined
+  const rawTareasEquipo = data?.tareasEquipo as (Tarea & { perfil?: Profile })[] | undefined
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+
+  // Filtrar personas por el buscador interno (usamos la lista completa de colaboradores)
+  const personasFiltradas = colaboradores.filter((p: Profile) => 
+    `${p.nombre} ${p.apellido}`.toLowerCase().includes(colaboradorSearch.toLowerCase())
+  )
+
+  // Aplicar filtros y ordenamiento a las tareas del equipo
+  const tareasEquipo = rawTareasEquipo
+    ?.filter(tarea => {
+      const matchesSearch = !teamFilters.searchText || 
+        tarea.titulo.toLowerCase().includes(teamFilters.searchText.toLowerCase()) ||
+        (tarea.descripcion && tarea.descripcion.toLowerCase().includes(teamFilters.searchText.toLowerCase()));
+      
+      const matchesColab = teamFilters.colaboradorIds.length === 0 || 
+        teamFilters.colaboradorIds.includes(tarea.colaborador_id);
+        
+      const matchesFecha = !teamFilters.fecha || 
+        (tarea.fecha_limite && tarea.fecha_limite.includes(teamFilters.fecha));
+        
+      const isOverdue = tarea.estado !== 'completada' && tarea.fecha_limite && new Date(tarea.fecha_limite) < today;
+
+      const matchesEstado = teamFilters.estado === 'all' || 
+        (teamFilters.estado === 'vencida' ? isOverdue : tarea.estado === teamFilters.estado);
+
+      return matchesSearch && matchesColab && matchesFecha && matchesEstado;
+    })
+    .sort((a, b) => {
+      // Ordenar por fecha_limite ascendente (puntos suspensivos para nulos)
+      if (!a.fecha_limite && !b.fecha_limite) return 0;
+      if (!a.fecha_limite) return 1;
+      if (!b.fecha_limite) return -1;
+      return new Date(a.fecha_limite).getTime() - new Date(b.fecha_limite).getTime();
+    });
+
+  // Aplicar filtros a mis tareas personales
+  const filteredTareas = useMemo(() => {
+    return tareas?.filter(tarea => {
+      const matchesSearch = !personalFilters.searchText || 
+        tarea.titulo.toLowerCase().includes(personalFilters.searchText.toLowerCase()) ||
+        (tarea.descripcion && tarea.descripcion.toLowerCase().includes(personalFilters.searchText.toLowerCase()));
+      
+      const matchesFecha = !personalFilters.fechaLimite || 
+        (tarea.fecha_limite && new Date(tarea.fecha_limite) <= new Date(personalFilters.fechaLimite + 'T23:59:59'));
+        
+      const matchesEstado = personalFilters.estado === 'all' || tarea.estado === personalFilters.estado;
+
+      return matchesSearch && matchesFecha && matchesEstado;
+    });
+  }, [tareas, personalFilters]);
 
   const handleRegistrarActividad = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -119,10 +207,14 @@ function ColaboradorContent() {
           <Separator orientation="vertical" className="mr-1 h-5" />
           <div>
             <h1 className="text-sm font-semibold text-foreground">
-              {tab === 'actividades' ? 'Registro de Actividades' : 'Mis Tareas'}
+              {tab === 'actividades' ? 'Registro de Actividades' : tab === 'tareas' ? 'Mis Tareas' : 'Tareas del Equipo'}
             </h1>
             <p className="text-xs text-muted-foreground">
-              {tab === 'actividades' ? 'Registra tus labores diarias' : 'Gestiona tus tareas asignadas'}
+              {tab === 'actividades' 
+                ? 'Registra tus labores diarias' 
+                : tab === 'tareas' 
+                ? 'Gestiona tus tareas asignadas' 
+                : 'Progreso de las tareas de tus compañeros'}
             </p>
           </div>
         </header>
@@ -230,52 +322,82 @@ function ColaboradorContent() {
                         </div>
                       </div>
 
-                      {/* Horas dedicadas */}
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium mb-2 text-foreground">
-                            Administración
+                      {/* Horas dedicadas (como porcentaje) */}
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-end">
+                          <label className="block text-sm font-medium text-foreground">
+                            Distribución de Esfuerzo <span className="text-red-500">*</span>
                           </label>
-                          <input
-                            type="number"
-                            name="administracion"
-                            min="0"
-                            className="w-full px-3 py-2 border border-border rounded-md text-foreground text-sm"
-                          />
+                          <span className={`text-xs font-bold ${totalEffort > 100 ? 'text-destructive' : 'text-primary'}`}>
+                            Total: {totalEffort}% / 100%
+                          </span>
                         </div>
-                        <div>
-                          <label className="block text-sm font-medium mb-2 text-foreground">
-                            Proyectos
-                          </label>
-                          <input
-                            type="number"
-                            name="proyectos"
-                            min="0"
-                            className="w-full px-3 py-2 border border-border rounded-md text-foreground text-sm"
-                          />
+                        <p className="text-[10px] text-muted-foreground italic">
+                          Asigne el porcentaje de su jornada dedicado a cada área. La suma no debe superar el 100%.
+                        </p>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          <div>
+                            <label className="block text-[11px] font-medium mb-1 text-muted-foreground">
+                              Administración (%)
+                            </label>
+                            <input
+                              type="number"
+                              name="administracion"
+                              min="0"
+                              max="100"
+                              className="w-full h-9 px-3 py-2 border border-border rounded-md bg-background text-foreground text-sm"
+                              value={effort.administracion || ''}
+                              onChange={(e) => setEffort({...effort, administracion: parseInt(e.target.value) || 0})}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-medium mb-1 text-muted-foreground">
+                              Proyectos (%)
+                            </label>
+                            <input
+                              type="number"
+                              name="proyectos"
+                              min="0"
+                              max="100"
+                              className="w-full h-9 px-3 py-2 border border-border rounded-md bg-background text-foreground text-sm"
+                              value={effort.proyectos || ''}
+                              onChange={(e) => setEffort({...effort, proyectos: parseInt(e.target.value) || 0})}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-medium mb-1 text-muted-foreground">
+                              Interventoría (%)
+                            </label>
+                            <input
+                              type="number"
+                              name="interventoria"
+                              min="0"
+                              max="100"
+                              className="w-full h-9 px-3 py-2 border border-border rounded-md bg-background text-foreground text-sm"
+                              value={effort.interventoria || ''}
+                              onChange={(e) => setEffort({...effort, interventoria: parseInt(e.target.value) || 0})}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-medium mb-1 text-muted-foreground">
+                              Otro (%)
+                            </label>
+                            <input
+                              type="number"
+                              name="otro"
+                              min="0"
+                              max="100"
+                              className="w-full h-9 px-3 py-2 border border-border rounded-md bg-background text-foreground text-sm"
+                              value={effort.otro || ''}
+                              onChange={(e) => setEffort({...effort, otro: parseInt(e.target.value) || 0})}
+                            />
+                          </div>
                         </div>
-                        <div>
-                          <label className="block text-sm font-medium mb-2 text-foreground">
-                            Interventoría
-                          </label>
-                          <input
-                            type="number"
-                            name="interventoria"
-                            min="0"
-                            className="w-full px-3 py-2 border border-border rounded-md text-foreground text-sm"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium mb-2 text-foreground">
-                            Otro
-                          </label>
-                          <input
-                            type="number"
-                            name="otro"
-                            min="0"
-                            className="w-full px-3 py-2 border border-border rounded-md text-foreground text-sm"
-                          />
-                        </div>
+                        {totalEffort > 100 && (
+                          <p className="text-[10px] text-destructive font-medium">
+                            La suma total no puede exceder el 100%.
+                          </p>
+                        )}
                       </div>
 
                       {/* Lugar y Proyectos de Desarrollo */}
@@ -338,7 +460,7 @@ function ColaboradorContent() {
 
                       <Button
                         type="submit"
-                        disabled={isSubmittingActivity}
+                        disabled={isSubmittingActivity || totalEffort > 100}
                         className="w-full"
                       >
                         {isSubmittingActivity ? (
@@ -346,6 +468,8 @@ function ColaboradorContent() {
                             <Loader2 className="h-4 w-4 animate-spin mr-2" />
                             Registrando...
                           </>
+                        ) : totalEffort > 100 ? (
+                          'Error: Suma mayor al 100%'
                         ) : (
                           'Registrar Actividad'
                         )}
@@ -359,11 +483,50 @@ function ColaboradorContent() {
             {/* Tab: Mis Tareas */}
             {tab === 'tareas' && (
               <div className="space-y-4">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-lg font-semibold text-foreground">Mis Tareas</h2>
+                <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4 mb-6 bg-secondary/5 p-4 rounded-xl border border-secondary/10">
+                  <h2 className="text-lg font-semibold text-foreground shrink-0">Mis Tareas</h2>
+                  
+                  {/* Filtros integrados */}
+                  <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-3 w-full">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase text-muted-foreground">Buscar</label>
+                      <input
+                        type="text"
+                        placeholder="Título o descripción..."
+                        className="w-full h-8 px-3 text-xs bg-background border border-border rounded-md focus:ring-1 focus:ring-primary outline-none"
+                        value={personalFilters.searchText}
+                        onChange={(e) => setPersonalFilters({...personalFilters, searchText: e.target.value})}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase text-muted-foreground">Vence antes de</label>
+                      <input
+                        type="date"
+                        className="w-full h-8 px-3 text-xs bg-background border border-border rounded-md focus:ring-1 focus:ring-primary outline-none"
+                        value={personalFilters.fechaLimite}
+                        onChange={(e) => setPersonalFilters({...personalFilters, fechaLimite: e.target.value})}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase text-muted-foreground">Estado</label>
+                      <select
+                        className="w-full h-8 px-3 text-xs bg-background border border-border rounded-md focus:ring-1 focus:ring-primary outline-none"
+                        value={personalFilters.estado}
+                        onChange={(e) => setPersonalFilters({...personalFilters, estado: e.target.value})}
+                      >
+                        <option value="all">Todos</option>
+                        <option value="pendiente">Pendiente</option>
+                        <option value="en_progreso">En Proceso</option>
+                        <option value="completada">Completada</option>
+                      </select>
+                    </div>
+                  </div>
+
                   <Button
                     onClick={() => setShowTareaForm(!showTareaForm)}
-                    variant="outline"
+                    variant={showTareaForm ? "destructive" : "default"}
+                    size="sm"
+                    className="shrink-0 w-full lg:w-auto mt-2 lg:mt-0"
                   >
                     {showTareaForm ? 'Cancelar' : 'Crear Tarea'}
                   </Button>
@@ -385,6 +548,7 @@ function ColaboradorContent() {
                     <p className="text-sm">{taskMessage.text}</p>
                   </div>
                 )}
+
 
                 {showTareaForm && (
                   <Card className="border-primary/50">
@@ -444,8 +608,8 @@ function ColaboradorContent() {
                 )}
 
                 <div className="space-y-3">
-                  {tareas && tareas.length > 0 ? (
-                    tareas.map((tarea) => (
+                  {filteredTareas && filteredTareas.length > 0 ? (
+                    filteredTareas.map((tarea) => (
                       <Card key={tarea.id} className="hover:shadow-md transition-shadow">
                         <CardContent className="pt-6">
                           <div className="flex justify-between items-start mb-3">
@@ -454,6 +618,17 @@ function ColaboradorContent() {
                               {tarea.descripcion && (
                                 <p className="text-sm text-muted-foreground mt-1">{tarea.descripcion}</p>
                               )}
+                              <p className="text-[10px] text-muted-foreground mt-2 italic flex items-center gap-1">
+                                <span>Asignado por:</span>
+                                <span className="font-medium text-foreground">
+                                  {tarea.supervisor_id === profile?.id 
+                                    ? 'Mí mismo' 
+                                    : (tarea as any).supervisor 
+                                      ? `${(tarea as any).supervisor.nombre} ${(tarea as any).supervisor.apellido}`
+                                      : 'Sistema'
+                                  }
+                                </span>
+                              </p>
                             </div>
                             <span
                               className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -512,6 +687,172 @@ function ColaboradorContent() {
                     <Card className="border-dashed">
                       <CardContent className="pt-6 text-center text-muted-foreground">
                         <p>No tienes tareas asignadas</p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              </div>
+            )}
+            {/* Tab: Tareas del Equipo */}
+            {tab === 'equipo' && (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-black text-foreground">Progreso del Equipo</h2>
+                </div>
+
+                {/* Filtros de Tareas */}
+                <Card className="bg-secondary/30 border-none shadow-none">
+                  <CardContent className="p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-black uppercase text-muted-foreground">Buscar Proyecto / Tarea</label>
+                        <input
+                          type="text"
+                          placeholder="Título o descripción..."
+                          className="w-full h-9 px-3 text-xs bg-background border border-border rounded-md"
+                          value={teamFilters.searchText}
+                          onChange={(e) => setTeamFilters({...teamFilters, searchText: e.target.value})}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-black uppercase text-muted-foreground">Compañeros / Personal</label>
+                        <div className="relative">
+                          <button 
+                            type="button"
+                            onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+                            className="w-full h-9 px-3 text-xs bg-background border border-border rounded-md flex items-center justify-between hover:border-primary transition-colors"
+                          >
+                            <span className="truncate">
+                              {teamFilters.colaboradorIds.length > 0 
+                                ? `${teamFilters.colaboradorIds.length} seleccionados` 
+                                : "Todos"}
+                            </span>
+                            {showFilterDropdown ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                          </button>
+
+                          {showFilterDropdown && (
+                            <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-md shadow-lg p-2 space-y-2 min-w-[150px]">
+                              <input 
+                                type="text"
+                                placeholder="Buscar persona..."
+                                className="w-full h-7 px-2 text-[10px] bg-background border border-border rounded-md"
+                                value={colaboradorSearch}
+                                onChange={(e) => setColaboradorSearch(e.target.value)}
+                                autoFocus
+                              />
+                              <div className="max-h-32 overflow-y-auto space-y-1">
+                                {personasFiltradas.length > 0 ? (
+                                  personasFiltradas.map((p: Profile) => (
+                                    <label key={p.id} className="flex items-center gap-2 text-[10px] cursor-pointer hover:bg-secondary/50 p-1 rounded transition-colors">
+                                      <input 
+                                        type="checkbox"
+                                        checked={teamFilters.colaboradorIds.includes(p.id)}
+                                        onChange={(e) => {
+                                          const newIds = e.target.checked 
+                                            ? [...teamFilters.colaboradorIds, p.id]
+                                            : teamFilters.colaboradorIds.filter(id => id !== p.id);
+                                          setTeamFilters({...teamFilters, colaboradorIds: newIds});
+                                        }}
+                                        className="rounded border-border"
+                                      />
+                                      <span className="truncate">{p.nombre} {p.apellido}</span>
+                                    </label>
+                                  ))
+                                ) : (
+                                  <p className="text-[9px] text-muted-foreground text-center py-2">No se encontraron compañeros</p>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-black uppercase text-muted-foreground">Fecha Límite</label>
+                        <input
+                          type="date"
+                          className="w-full h-9 px-3 text-xs bg-background border border-border rounded-md"
+                          value={teamFilters.fecha}
+                          onChange={(e) => setTeamFilters({...teamFilters, fecha: e.target.value})}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-black uppercase text-muted-foreground">Estado</label>
+                        <select
+                          className="w-full h-9 px-3 text-xs bg-background border border-border rounded-md"
+                          value={teamFilters.estado}
+                          onChange={(e) => setTeamFilters({...teamFilters, estado: e.target.value})}
+                        >
+                          <option value="all">Todos los estados</option>
+                          <option value="pendiente">Pendiente</option>
+                          <option value="en_progreso">En Proceso</option>
+                          <option value="completada">Completada</option>
+                          <option value="vencida">Vencida</option>
+                        </select>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <div className="grid grid-cols-1 gap-4">
+                  {tareasEquipo && tareasEquipo.length > 0 ? (
+                    tareasEquipo.map((tarea) => {
+                      const isOverdue = tarea.estado !== 'completada' && tarea.fecha_limite && new Date(tarea.fecha_limite) < today;
+                      return (
+                        <Card key={tarea.id} className={`hover:shadow-md transition-shadow border-l-4 ${isOverdue ? 'border-l-destructive bg-destructive/5' : 'border-l-primary'}`}>
+                          <CardContent className="pt-6">
+                            <div className="flex justify-between items-start mb-3">
+                              <div>
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h3 className="font-semibold text-foreground">{tarea.titulo}</h3>
+                                  {isOverdue && (
+                                    <span className="flex items-center gap-1 text-[9px] font-black text-destructive uppercase border border-destructive/20 px-1 rounded bg-destructive/10">
+                                      Vencida
+                                    </span>
+                                  )}
+                                </div>
+                                {tarea.descripcion && (
+                                  <p className="text-sm text-muted-foreground mt-1">{tarea.descripcion}</p>
+                                )}
+                                <p className="text-xs text-muted-foreground mt-2 italic">
+                                  Realizado por: {tarea.perfil?.nombre} {tarea.perfil?.apellido}
+                                </p>
+                              </div>
+                              <span
+                                className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                  tarea.estado === 'completada'
+                                    ? 'bg-green-100 text-green-800'
+                                    : tarea.estado === 'en_progreso'
+                                    ? 'bg-blue-100 text-blue-800'
+                                    : 'bg-yellow-100 text-yellow-800'
+                                }`}
+                              >
+                                {tarea.estado === 'completada'
+                                  ? 'Completada'
+                                  : tarea.estado === 'en_progreso'
+                                  ? 'En Proceso'
+                                  : 'Pendiente'}
+                              </span>
+                            </div>
+
+                            <div className="w-full bg-secondary h-2 rounded-full overflow-hidden mt-4">
+                              <div 
+                                className={`h-full transition-all duration-500 ${
+                                  tarea.estado === 'completada' 
+                                    ? 'bg-green-500 w-full' 
+                                    : tarea.estado === 'en_progreso' 
+                                    ? 'bg-blue-500 w-1/2' 
+                                    : 'bg-yellow-500 w-[10%]'
+                                }`}
+                              />
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })
+                  ) : (
+                    <Card className="border-dashed">
+                      <CardContent className="pt-6 text-center text-muted-foreground">
+                        <p>No hay actividad registrada en el equipo aún</p>
                       </CardContent>
                     </Card>
                   )}

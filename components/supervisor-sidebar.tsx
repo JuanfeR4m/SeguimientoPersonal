@@ -41,6 +41,7 @@ export function SupervisorSidebar({ nombre, apellido, activeTab = 'inicio' }: Su
 
   const gestionItems = [
     { id: 'asignar', title: 'Asignar Tareas', href: '/supervisor?tab=asignar', icon: ClipboardList },
+    { id: 'equipo', title: 'Tareas del Equipo', href: '/supervisor?tab=equipo', icon: ClipboardList },
   ]
 
   return (
@@ -51,8 +52,8 @@ export function SupervisorSidebar({ nombre, apellido, activeTab = 'inicio' }: Su
             <CheckSquare className="h-5 w-5 text-sidebar-primary-foreground" />
           </div>
           <div>
-            <h2 className="font-mono text-base font-bold tracking-tight text-sidebar-foreground">
-              Sistema MAV
+            <h2 className="text-base font-black tracking-tight text-sidebar-foreground">
+              Central MAV
             </h2>
             <p className="text-xs text-sidebar-foreground/60">Supervisor</p>
           </div>

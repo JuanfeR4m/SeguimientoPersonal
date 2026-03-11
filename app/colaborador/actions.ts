@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import type { ActividadRegistro, Tarea } from '@/lib/types'
 
 export async function getColaboradorProfile() {
@@ -43,7 +43,26 @@ export async function getColaboradorTareas() {
     return { error: 'No se pudieron obtener las tareas' }
   }
 
-  return { tareas }
+  // Obtener los perfiles de los supervisores para mostrar quién asignó la tarea
+  const supervisorIds = Array.from(new Set(tareas.map(t => t.supervisor_id)))
+  
+  if (supervisorIds.length === 0) {
+    return { tareas: [] }
+  }
+
+  // Usar admin client para poder leer perfiles de supervisores (que pueden estar protegidos por RLS)
+  const adminSupabase = await createAdminClient()
+  const { data: supervisors } = await adminSupabase
+    .from('profiles')
+    .select('id, nombre, apellido')
+    .in('id', supervisorIds)
+
+  const tareasConSupervisor = tareas.map(tarea => ({
+    ...tarea,
+    supervisor: supervisors?.find(s => s.id === tarea.supervisor_id)
+  }))
+
+  return { tareas: tareasConSupervisor }
 }
 
 export async function registrarActividad(formData: FormData) {
@@ -65,12 +84,21 @@ export async function registrarActividad(formData: FormData) {
     return { error: 'No se pudo obtener la información del perfil' }
   }
 
+  const administracion = parseInt(formData.get('administracion') as string) || 0
+  const proyectos = parseInt(formData.get('proyectos') as string) || 0
+  const interventoria = parseInt(formData.get('interventoria') as string) || 0
+  const otro = parseInt(formData.get('otro') as string) || 0
+
+  if (administracion + proyectos + interventoria + otro > 100) {
+    return { error: 'La suma de los porcentajes de esfuerzo no puede superar el 100%' }
+  }
+
   const actividad = {
     fecha_de_diligenciamiento: formData.get('fecha_de_diligenciamiento') as string,
-    administracion: parseInt(formData.get('administracion') as string) || 0,
-    proyectos: parseInt(formData.get('proyectos') as string) || 0,
-    interventoria: parseInt(formData.get('interventoria') as string) || 0,
-    otro: parseInt(formData.get('otro') as string) || 0,
+    administracion,
+    proyectos,
+    interventoria,
+    otro,
     tareas_pendientes: formData.get('tareas_pendientes') as string,
     lugar_de_trabajo: formData.get('lugar_de_trabajo') as string,
     proyectos_de_desarrollo: formData.get('proyectos_de_desarrollo') as string,
@@ -149,4 +177,51 @@ export async function actualizarEstadoTarea(tareaId: string, nuevoEstado: string
 
   revalidatePath('/colaborador')
   return { success: 'Tarea actualizada' }
+}
+
+export async function getTodasLasTareasColaboradores() {
+  const supabase = await createAdminClient()
+  
+  // Obtener todos los perfiles con rol 3 (colaboradores)
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('id, nombre, apellido')
+    .eq('role', 3)
+    
+  if (!profiles) return { tareas: [] }
+  const profileIds = profiles.map(p => p.id)
+
+  const { data: tareas, error } = await supabase
+    .from('tareas')
+    .select('*')
+    .in('colaborador_id', profileIds)
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    return { error: 'No se pudieron obtener las tareas del equipo' }
+  }
+
+  // Mezclar información de perfiles para mostrar nombres
+  const tareasConPerfil = tareas.map(tarea => ({
+    ...tarea,
+    perfil: profiles.find(p => p.id === tarea.colaborador_id)
+  }))
+
+  return { tareas: tareasConPerfil }
+}
+
+export async function getColaboradoresDisponibles() {
+  const supabase = await createAdminClient()
+
+  const { data: colaboradores, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .in('role', [2, 3]) // Supervisores y colaboradores por igual
+    .order('nombre', { ascending: true })
+
+  if (error) {
+    return { error: 'No se pudieron obtener los colaboradores' }
+  }
+
+  return { colaboradores }
 }

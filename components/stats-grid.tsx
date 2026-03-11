@@ -49,7 +49,7 @@ function StatCard({ title, value, icon, color }: StatCardProps) {
         </div>
         <div className="min-w-0">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{title}</p>
-          <p className={`text-2xl font-bold tabular-nums ${c.value}`}>{value}</p>
+          <p className={`text-2xl font-black tabular-nums ${c.value}`}>{value}</p>
         </div>
       </CardContent>
     </Card>

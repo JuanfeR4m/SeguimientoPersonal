@@ -45,8 +45,8 @@ export function AppSidebar() {
             <Shield className="h-5 w-5 text-sidebar-primary-foreground" />
           </div>
           <div>
-            <h2 className="font-mono text-base font-bold tracking-tight text-sidebar-foreground">
-              Sistema MAV
+            <h2 className="text-base font-black tracking-tight text-sidebar-foreground">
+              Central MAV
             </h2>
             <p className="text-xs text-sidebar-foreground/60">Panel Directivo</p>
           </div>

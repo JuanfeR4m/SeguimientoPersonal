@@ -1,5 +1,5 @@
 export const metadata = {
-  title: 'Mi Espacio - Sistema MAV',
+  title: 'Mi Espacio - Central MAV',
   description: 'Registra tus actividades diarias',
 }
 

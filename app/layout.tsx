@@ -1,14 +1,17 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter, Space_Mono } from 'next/font/google'
+import { Montserrat, Lato } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
-const _inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
-const _spaceMono = Space_Mono({ weight: ["400", "700"], subsets: ["latin"], variable: "--font-space-mono" });
+const _montserrat = Montserrat({ weight: ["400", "700", "900"], subsets: ["latin"], variable: "--font-montserrat" });
+const _lato = Lato({ weight: ["400", "700", "900"], subsets: ["latin"], variable: "--font-lato" });
 
 export const metadata: Metadata = {
-  title: 'Sistema MAV - Dashboard Directivo',
+  title: 'Central MAV - Dashboard Directivo',
   description: 'Sistema de seguimiento de personal MAV',
+  icons: {
+    icon: '/favicon.ico',
+  },
 }
 
 export const viewport: Viewport = {
@@ -22,7 +25,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body className={`${_inter.variable} ${_spaceMono.variable} font-sans antialiased`}>
+      <head>
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+      </head>
+      <body className={`${_montserrat.variable} ${_lato.variable} font-sans antialiased text-slate-900`}>
         {children}
         <Analytics />
       </body>
